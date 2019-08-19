@@ -24,15 +24,23 @@ bot.on('message', function(user, userID, channelID, message, event) {
             case 'add':
                 var user = args[2];
                 // Add a Battletag to the user list
-                var db = new AWS.DynamoDB.DocumentClient();
+                var db = new AWS.DynamoDB({apiVersion: '2012-08-10'});
                 var params = {
                     TableName: 'MojitoUsers',
-                    Key: user
-                };
+                    Key: {
+                      'Battletag': {S: user}
+                    }
+                  };
                 
-                db.get(params, (err, data) => {
-                    if (err) 
-                })
+                try {
+                    let data = await db.getItem(params).promise();
+                    if (data.Item !== undefined)
+                    {
+                        // User already added; message channel to indicate as such
+                    }
+                } catch (e) {
+                    // TODO: Handle error
+                }
         }
     }
 });
