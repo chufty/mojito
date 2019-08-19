@@ -1,0 +1,29 @@
+{
+  "name": "mojito",
+  "version": "0.1.0",
+  "description": "A bot for Cocktail Riot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chufty/mojito.git"
+  },
+  "keywords": [
+    "discord",
+    "cocktail-riot",
+    "mojito"
+  ],
+  "author": "Aaron Proctor",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/chufty/mojito/issues"
+  },
+  "homepage": "https://github.com/chufty/mojito#readme",
+  "dependencies": {
+    "aws-sdk": "^2.512.0",
+    "discord.io": "^2.5.3",
+    "overwatch-api": "^0.8.0"
+  }
+}
