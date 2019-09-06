@@ -45,7 +45,7 @@ bot.on('message', message => {
                         overwatch.getProfile('pc', 'eu', user.replace('#', '-'), (err, json) => {
                             if (err)
                             {
-                                console.log(err);
+                                console.error(err);
                                 message.channel.send(`Sorry, couldn't find user with battletag ${user}`);
                             } 
                             else {
@@ -73,7 +73,7 @@ bot.on('message', message => {
                                     })
                                     .catch((err) => {
                                         message.channel.send(`Found user ${user} but failed to add them to the Daily Update for some reason.`);
-                                        console.log(err);
+                                        console.error(err);
                                     });
                             }
                         });
@@ -81,23 +81,36 @@ bot.on('message', message => {
                 })
                 .catch(e => {
                     // TODO: Handle error
-                    console.log(e);
+                    console.error(e);
                     message.channel.send("Oops, something when catastrophically wrong. It's probably Chufty's fault...");
                 });
         }
     }
 });
 
+const getSigned = function(number) {
+    return number > 0
+        ? `+${number.toString()}`
+        : number.toString();
+}
+
+// TODO: This method is crude, refactor?
+const getGainRole = function(stats, gain) {
+    if (stats.tank.gain == gain)
+        return "🛡";
+    if (stats.damage.gain == gain)
+        return "⚔";
+    if (stats.support.gain == gain)
+        return "❤";
+    return "";
+}
+
 const getProfile = promisify(overwatch.getProfile);
 
 // TODO: Split into functions to unwrap brain
-let buildPlayer = new Promise((resolve, reject) => {
 
-});
-
-
-schedule.scheduleJob('*/1 * * * *', () => {
-    console.log("*** Daily Update V2 ***");
+schedule.scheduleJob({hour: 9, minute: 30}, () => {
+    console.log("*** Begin Daily Update ***");
 
     var db = new AWS.DynamoDB({apiVersion: '2012-08-10'});
     var params = {
@@ -126,26 +139,73 @@ schedule.scheduleJob('*/1 * * * *', () => {
                 },
                 total: player.competitive.support.rank + player.competitive.damage.rank + player.competitive.tank.rank
             };
+            user.displayName = user.Battletag.S.split('#')[0];
+            user.gains = {
+                best: {
+                    gain: Math.max(user.stats.tank.gain, user.stats.damage.gain, user.stats.support.gain)
+                },
+                worst: {
+                    gain: Math.min(user.stats.tank.gain, user.stats.damage.gain, user.stats.support.gain)
+                }
+            };
+            user.gains.best.role = getGainRole(user.stats, user.gains.best.gain);
+            user.gains.worst.role = getGainRole(user.stats, user.gains.worst.gain);
             return user;
           })
         }))
         .then(players => {
-            console.log(`Got stats for ${players.length} players, looks like this:`);
-            console.log(players);
 
             const leaderList = [...players].sort((a,b) => a.stats.total - b.stats.total );
             let leaders = "";
             for (let i = 0; i < leaderList.length; i++) {
                 const p = leaderList[i];
-                leaders = leaders + `${i+1}. **${p.Battletag.S.split('#')[0]}** (🛡${p.stats.tank.rank}/⚔${p.stats.damage.rank}/❤${p.stats.support.rank})`
+                leaders = leaders + `${i+1}. **${p.displayName}** (🛡${p.stats.tank.rank}/⚔${p.stats.damage.rank}/❤${p.stats.support.rank})`;
             }
-        
-            console.log(`Leaderboard contains ${leaderList.length} players`);
+
+            if (leaders == "")
+                leaders = "Oops! Looks like noone has been added yet. Use '!mojito add <battletag>' to get started.";
+
+            const tankList = [...players].sort((a,b) => a.stats.tank.rank - b.stats.tank.rank );
+            let tanks = "";
+            for (let i = 0; i < tankList.length; i++) {
+                const p = tankList[i];
+                tanks = tanks + `${i+1}. **${p.displayName}** (${p.stats.tank.rank})`;
+            }
+
+            const dpsList = [...players].sort((a,b) => a.stats.damage.rank - b.stats.damage.rank );
+            let dps = "";
+            for (let i = 0; i < dpsList.length; i++) {
+                const p = dpsList[i];
+                dps = dps + `${i+1}. **${p.displayName}** (${p.stats.damage.rank})`;
+            }
+
+            const supportList = [...players].sort((a,b) => a.stats.support.rank - b.stats.support.rank );
+            let supports = "";
+            for (let i = 0; i < supportList.length; i++) {
+                const p = supportList[i];
+                supports = supports + `${i+1}. **${p.displayName}** (${p.stats.support.rank})`;
+            }
+
+            const winnersList = [...players].sort((a,b) => a.gains.best.gain - b.gains.best.gain);
+            let winners = "";
+            for (let i = 0; i < winnersList.length; i++) {
+                const p = winnersList[i];
+                if (p.gains.best.gain > 0)
+                    winners = winners + `${i+1}. **${p.displayName}** *(${getSigned(p.gains.best.gain)} ${p.gains.best.role})*`;
+            }
+
+            const losersList = [...players].sort((a,b) => a.gains.worst.gain - b.gains.worst.gain);
+            let losers = "";
+            for (let i = 0; i < losersList.length; i++) {
+                const p = losersList[i];
+                if (p.gains.worst.gain < 0)
+                    losers = losers + `${i+1}. **${p.displayName}** *(${getSigned(p.gains.worst.gain)} ${p.gains.worst.role})*`;
+            }
     
             bot.guilds.forEach(guild => {
                 if (guild.available) {
                     console.log('Attempting to post update to server ' + guild.name);
-        
+
                     let message = {
                         color: 5036231,
                         author: {
@@ -155,147 +215,76 @@ schedule.scheduleJob('*/1 * * * *', () => {
                         fields: [
                             {
                                 name: "Leaderboard",
-                                value: leaders
+                                value: leaders || '\u200B'
+                            },
+                            {
+                                name: '\u200B',
+                                value: '\u200B',
+                            },
+                            {
+                                name: "🛡 Tank",
+                                value: tanks || '\u200B',
+                                inline: true
+                            },
+                            {
+                                name: "⚔ DPS",
+                                value: dps || '\u200B',
+                                inline: true
+                            },
+                            {
+                                name: "❤ Support",
+                                value: supports || '\u200B',
+                                inline: true
+                            },
+                            {
+                                name: '\u200B',
+                                value: '\u200B',
+                            },
+                            {
+                                name: "Biggest Winners",
+                                value: winners || '*No gains today :disappointed:*'
+                            },
+                            {
+                                name: "Biggest Losers",
+                                value: losers || '*No losses today :joy:*'
                             }
                         ]
                     };
-        
-                    console.log(`Posting message: ${message}`);
         
                     guild.channels.find(c => c.name === 'general')
                         .send('Good morning (former) Cocktail Riot! Here is your daily SR update...', {embed: message});
                 }
             });
 
-            // TODO: Update database with new stats argh
+            // Update database with new stats argh
+            console.log('Updating DB');
+            var docClient = new AWS.DynamoDB.DocumentClient();
+            players.forEach(player => {
+
+                var newParams = {
+                    TableName: 'MojitoUsers',
+                    Key: {
+                        'Battletag': player.Battletag.S
+                    },
+                    UpdateExpression: "set TankSR = :tank, DamageSR = :dps, SupportSR = :support",
+                    ExpressionAttributeValues: {
+                        ":tank": player.stats.tank.rank,
+                        ":dps": player.stats.damage.rank,
+                        ":support": player.stats.support.rank
+                    },
+                    ReturnValues: "UPDATED_NEW"
+                };
+
+                docClient.update(newParams, (err, data) => {
+                    if (err) {
+                        console.error(`Unable to update ${player.Battletag.S}: ${JSON.stringify(err, null, 2)}`);
+                    }
+                });
+            });
+
         });
       });
     
 }); // end schedule
-
-// var job = schedule.scheduleJob('*/1 * * * *', () => {
-//     console.log('*** Performing Daily Update ***');
-    
-//     console.log('Getting all users...');
-//     var db = new AWS.DynamoDB({apiVersion: '2012-08-10'});
-//     var params = {
-//         TableName: 'MojitoUsers'
-//       };
-    
-//     Promise.all(
-//     db.scan(params).promise()
-//     .then(data => {
-//         let players = new Array();
-//         data.Items.map(user => {
-//             console.log(`Found user ${user.Battletag.S}`);
-
-//             getProfile('pc','eu', user.Battletag.S.replace('#', '-'))
-//             .then(data => {
-//                 console.log(`Got the profile`);
-//                 let player = {
-//                     battletag: user.Battletag.S,
-//                     name: user.Battletag.S.split('#')[0],
-//                     tank: {
-//                         rank: data.competitive.tank.rank,
-//                         gain: data.competitive.tank.rank - user.TankSR.N
-//                     },
-//                     damage: {
-//                         rank: data.competitive.damage.rank,
-//                         gain: data.competitive.damage.rank - user.DamageSR.N
-//                     },
-//                     support: {
-//                         rank: data.competitive.support.rank,
-//                         gain: data.competitive.support.rank - user.SupportSR.N
-//                     },
-//                     total: data.competitive.support.rank + data.competitive.damage.rank + data.competitive.tank.rank
-//                 };
-//                 players.push(player)
-//             })
-//             .catch(err => {
-//                 console.error(`Error loading profile for ${user.Battletag.S}`);
-//                 console.error(err);
-//             });
-//         });
-//         return players;
-//     })
-//     .then(players => {
-
-//         console.log(`Done with database: found ${players.length} players`);
-    
-//         const leaderList = [...players].sort((a,b) => a.total - b.total );
-//         let leaders = "";
-//         for (let i = 0; i < leaderList.length; i++) {
-//             const p = leaderList[i];
-//             leaders = leaders + `${i+1}. **${p.name}** (${p.tank.rank}/${p.damage.rank}/${p.support.rank})`
-//         }
-    
-//         console.log(`Leaderboard contains ${leaderList.length} players`);
-
-//         bot.guilds.forEach(guild => {
-//             if (guild.available) {
-//                 console.log('Attempting to post update to server ' + guild.name);
-    
-//                 let message = {
-//                     embed: {
-//                         color: 5036231,
-//                         author: "Cocktail Riot"
-//                     },
-//                     fields: [
-//                         {
-//                             name: "Leaderboard",
-//                             value: leaders
-//                         }
-//                     ]
-//                 };
-    
-//                 console.log(`Leaderboard: ${leaders}`);
-    
-//                 guild.channels.find(c => c.name === 'general')
-//                     .send('Good morning (former) Cocktail Riot! Here is your daily SR update...', message);
-//             }
-//         });
-//     }))
-//     .then(data => console.log(data))
-//     .catch(err => console.error(`Error reading DynamoDB database: ${err}`));
-
-//         // let message = ("Good morning Cocktail Riot! Here's your daily SR update", {
-//         //     "embed": {
-//         //       "color": 5036231,
-//         //       "author": {
-//         //         "name": "Cocktail Riot",
-//         //         "icon_url": "https://cdn.discordapp.com/icons/420155827689619456/41e74064327e13e1c85421bbde50f065.webp"
-//         //       },
-//         //       "fields": [
-//         //         {
-//         //           "name": "Overall Leaderboard",
-//         //           "value": "1. **Chufty** ()\n2. **Seabo** ()"
-//         //         },
-//         //         {
-//         //           "name": "🛡 Tank",
-//         //           "value": "1. **Chufty**",
-//         //           "inline": true
-//         //         },
-//         //         {
-//         //           "name": "⚔ DPS",
-//         //           "value": "1. **Chufty**",
-//         //           "inline": true
-//         //         },
-//         //         {
-//         //           "name": "❤ Support",
-//         //           "value": "1. **Chufty**",
-//         //           "inline": true
-//         //         },
-//         //         {
-//         //           "name": "Biggest Winners",
-//         //           "value": "1. Chufty *(Tank, +32)*"
-//         //         },
-//         //         {
-//         //           "name": "Biggest Losers",
-//         //           "value": "1. Seabo *(Support, -422)*"
-//         //         }
-//         //       ]
-//         //     }
-//         //   });
-//     });
 
 bot.login(process.env.MOJ_TOKEN);
