@@ -109,7 +109,7 @@ const getProfile = promisify(overwatch.getProfile);
 
 // TODO: Split into functions to unwrap brain
 
-schedule.scheduleJob({hour: 9, minute: 30}, () => {
+schedule.scheduleJob({hour: 9, minute: 40}, () => {
     console.log("*** Begin Daily Update ***");
 
     var db = new AWS.DynamoDB({apiVersion: '2012-08-10'});
@@ -159,7 +159,7 @@ schedule.scheduleJob({hour: 9, minute: 30}, () => {
             let leaders = "";
             for (let i = 0; i < leaderList.length; i++) {
                 const p = leaderList[i];
-                leaders = leaders + `${i+1}. **${p.displayName}** (🛡${p.stats.tank.rank}/⚔${p.stats.damage.rank}/❤${p.stats.support.rank})`;
+                leaders = leaders + `${i+1}. **${p.displayName}** (🛡${p.stats.tank.rank || "*[unplaced]*"}/⚔${p.stats.damage.rank || "*[unplaced]*"}/❤${p.stats.support.rank || "*[unplaced]*"})`;
             }
 
             if (leaders == "")
@@ -169,24 +169,21 @@ schedule.scheduleJob({hour: 9, minute: 30}, () => {
             let tanks = "";
             for (let i = 0; i < tankList.length; i++) {
                 const p = tankList[i];
-                const sr = p.stats.tank.rank > 0 ? p.stats.tank.rank.toString() : "*unplaced*";
-                tanks = tanks + `${i+1}. **${p.displayName}** (${sr})`;
+                tanks = tanks + `${i+1}. **${p.displayName}** (${p.stats.tank.rank || "*unplaced*"})`;
             }
 
             const dpsList = [...players].sort((a,b) => a.stats.damage.rank - b.stats.damage.rank );
             let dps = "";
             for (let i = 0; i < dpsList.length; i++) {
                 const p = dpsList[i];
-                const sr = p.stats.damage.rank > 0 ? p.stats.damage.rank.toString() : "*unplaced*";
-                dps = dps + `${i+1}. **${p.displayName}** (${sr})`;
+                dps = dps + `${i+1}. **${p.displayName}** (${p.stats.damage.rank || "*unplaced*"})`;
             }
 
             const supportList = [...players].sort((a,b) => a.stats.support.rank - b.stats.support.rank );
             let supports = "";
             for (let i = 0; i < supportList.length; i++) {
                 const p = supportList[i];
-                const sr = p.stats.support.rank > 0 ? p.stats.support.rank.toString() : "*unplaced*";
-                supports = supports + `${i+1}. **${p.displayName}** (${sr})`;
+                supports = supports + `${i+1}. **${p.displayName}** (${p.stats.support.rank || "*unplaced*"})`;
             }
 
             const winnersList = [...players].sort((a,b) => a.gains.best.gain - b.gains.best.gain);
@@ -271,9 +268,9 @@ schedule.scheduleJob({hour: 9, minute: 30}, () => {
                     },
                     UpdateExpression: "set TankSR = :tank, DamageSR = :dps, SupportSR = :support",
                     ExpressionAttributeValues: {
-                        ":tank": player.stats.tank.rank,
-                        ":dps": player.stats.damage.rank,
-                        ":support": player.stats.support.rank
+                        ":tank": player.stats.tank.rank || "0",
+                        ":dps": player.stats.damage.rank || "0",
+                        ":support": player.stats.support.rank || "0"
                     },
                     ReturnValues: "UPDATED_NEW"
                 };
