@@ -169,21 +169,24 @@ schedule.scheduleJob({hour: 9, minute: 30}, () => {
             let tanks = "";
             for (let i = 0; i < tankList.length; i++) {
                 const p = tankList[i];
-                tanks = tanks + `${i+1}. **${p.displayName}** (${p.stats.tank.rank})`;
+                const sr = p.stats.tank.rank > 0 ? p.stats.tank.rank.toString() : "*unplaced*";
+                tanks = tanks + `${i+1}. **${p.displayName}** (${sr})`;
             }
 
             const dpsList = [...players].sort((a,b) => a.stats.damage.rank - b.stats.damage.rank );
             let dps = "";
             for (let i = 0; i < dpsList.length; i++) {
                 const p = dpsList[i];
-                dps = dps + `${i+1}. **${p.displayName}** (${p.stats.damage.rank})`;
+                const sr = p.stats.damage.rank > 0 ? p.stats.damage.rank.toString() : "*unplaced*";
+                dps = dps + `${i+1}. **${p.displayName}** (${sr})`;
             }
 
             const supportList = [...players].sort((a,b) => a.stats.support.rank - b.stats.support.rank );
             let supports = "";
             for (let i = 0; i < supportList.length; i++) {
                 const p = supportList[i];
-                supports = supports + `${i+1}. **${p.displayName}** (${p.stats.support.rank})`;
+                const sr = p.stats.support.rank > 0 ? p.stats.support.rank.toString() : "*unplaced*";
+                supports = supports + `${i+1}. **${p.displayName}** (${sr})`;
             }
 
             const winnersList = [...players].sort((a,b) => a.gains.best.gain - b.gains.best.gain);
