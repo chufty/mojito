@@ -49,9 +49,9 @@ bot.on('message', message => {
                                 message.channel.send(`Sorry, couldn't find user with battletag ${user}`);
                             } 
                             else {
-                                var damageSR = json.competitive.damage.rank;
-                                var supportSR = json.competitive.support.rank;
-                                var tankSR = json.competitive.tank.rank;
+                                var damageSR = json.competitive.damage.rank || 0;
+                                var supportSR = json.competitive.support.rank || 0;
+                                var tankSR = json.competitive.tank.rank || 0;
 
                                 var putParams = {
                                     TableName: 'MojitoUsers',
