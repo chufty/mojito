@@ -109,7 +109,7 @@ const getProfile = promisify(overwatch.getProfile);
 
 // TODO: Split into functions to unwrap brain
 
-schedule.scheduleJob({hour: 9, minute: 40}, () => {
+schedule.scheduleJob({hour: 9, minute: 0}, () => {
     console.log("*** Begin Daily Update ***");
 
     var db = new AWS.DynamoDB({apiVersion: '2012-08-10'});
