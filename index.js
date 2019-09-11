@@ -190,7 +190,7 @@ function postUpdate(players, guilds) {
         winners = winners + `${i+1}. **${p.displayName}** *(${getSigned(p.gains.best.gain)} ${p.gains.best.role})*\n`;
     }
 
-    const losersList = [...players].filter(p => p.gains.worst.gain < 0).sort((a,b) => b.gains.worst.gain - a.gains.worst.gain);
+    const losersList = [...players].filter(p => p.gains.worst.gain < 0).sort((a,b) => a.gains.worst.gain - b.gains.worst.gain);
     let losers = "";
     for (let i = 0; i < losersList.length; i++) {
         const p = losersList[i];
