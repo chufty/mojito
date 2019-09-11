@@ -1,0 +1,18 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10
+  build:
+    commands:
+      - npm install
+  post_build:
+    commands:
+      - echo Build completed on `date`
+# TODO: Maybe we don't need all of node_modules?
+artifacts:
+  files:
+    - index.js
+    - package.json
+    - node_modules/**/*

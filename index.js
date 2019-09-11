@@ -64,7 +64,6 @@ bot.on('message', message => {
                                 };
 
                                 console.log(`Attempting to add user ${user} to the database`);
-                                console.log(putParams);
 
                                 db.putItem(putParams).promise()
                                     .then((result) => {
@@ -150,7 +149,6 @@ function getUpdate(users) {
         }));
 }
 
-// TODO: Don't post unplaced players
 function postUpdate(players, guilds) {
     const leaderList = [...players].filter(player => player.stats.best > 0).sort((a,b) => b.stats.best - a.stats.best );
     let leaders = "";
