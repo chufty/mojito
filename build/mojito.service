@@ -1,0 +1,13 @@
+[Unit]
+Description=Mojito - A bot for Cocktail Riot
+After=network.target
+
+[Service]
+Environment=MOJ_TOKEN=ZADS
+Type=simple
+User=ec2-user
+ExecStart=/home/ec2-user/.nvm/versions/node/v10.16.3/bin/node /home/ec2-user/mojito/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,18 @@
+version: 0.0
+os: linux
+files:
+  - source: index.js
+    destination: /home/ec2-user/mojito/
+  - source: package.json
+    destination: /home/ec2-user/mojito/
+  - source: node_modules/**/*
+    destination: /home/ec2-user/mojito/
+hooks:
+  BeforeInstall:
+    - location: build/stop_mojito.sh
+  ApplicationStart:
+    - location: build/start_mojito.sh
+      timeout: 60
+  ValidateService:
+    - location: build/poke_mojito.sh
+      timeout: 60
