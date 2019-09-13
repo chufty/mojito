@@ -6,7 +6,7 @@ files:
   - source: package.json
     destination: /home/ec2-user/mojito/
   - source: node_modules
-    destination: /home/ec2-user/mojito/
+    destination: /home/ec2-user/mojito/node_modules/
 hooks:
   BeforeInstall:
     - location: build/stop_mojito.sh
