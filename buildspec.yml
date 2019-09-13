@@ -15,4 +15,5 @@ artifacts:
   files:
     - index.js
     - package.json
+    - appspec.yml
     - node_modules/**/*
