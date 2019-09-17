@@ -10,6 +10,13 @@ AWS.config.update({
     region: 'eu-west-1'
 });
 
+// Commands
+function GetHelp(user) {
+    user.sendMessage(`Commands:
+    \`!mojito help\`: List my commands (it\'s what I\'m doing now...).
+    \`!mojito add <battletag>\`: Adds the specified Battle.net user to the Daily Update.`);
+}
+
 bot.on('ready', function(event) {
     console.log('Logged in as %s - %s\n', bot.user.username, bot.user.id);
 });
@@ -91,6 +98,12 @@ bot.on('message', message => {
                 else {
                     message.channel.send('Only special people may invoke this command');
                 }
+                break;
+            case 'help':
+            case 'commands':
+            case 'h':
+            case '?':
+                GetHelp(message.author);
                 break;
         }
     }
