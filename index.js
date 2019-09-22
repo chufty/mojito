@@ -11,10 +11,29 @@ AWS.config.update({
 });
 
 // Commands
-function GetHelp(user) {
-    user.sendMessage(`Commands:
+function Help(user) {
+    user.sendMessage(`Channel commands:
     \`!mojito help\`: List my commands (it\'s what I\'m doing now...).
     \`!mojito add <battletag>\`: Adds the specified Battle.net user to the Daily Update.`);
+}
+
+function Add(guild, user, battletag, force, channel) {
+    var docClient = new AWS.DynamoDB.DocumentClient();
+    var existsQuery = {
+        TableName: 'MojitoGuilds',
+        Key: {
+            'GuildId': guild,
+            'Username':user
+        }
+    };
+
+    docClient.get(existsQuery).promise()
+    .then(data => {
+    })
+    .catch(err => {
+        console.error(err);
+        channel.sendMessage('Oops, something went wrong. Blame Chufty.');
+    })
 }
 
 bot.on('ready', function(event) {
@@ -92,7 +111,8 @@ bot.on('message', message => {
                 });
                 break;
             case 'update':
-                if (message.author.tag == 'Chufty#6569') {
+                // TODO: Introduce admin role
+                if (message.member.hasPermission('MANAGE_GUILD')) {
                     adhocUpdate([message.guild]);
                 }
                 else {
@@ -103,7 +123,7 @@ bot.on('message', message => {
             case 'commands':
             case 'h':
             case '?':
-                GetHelp(message.author);
+                Help(message.author);
                 break;
         }
     }
